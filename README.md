@@ -13,3 +13,49 @@
       "environment_setup_commit": "4a72da71001f154ea60906a2f74898d32b7322a7",
       "difficulty": "1-4 hours"
     }
+
+Failed testcase code:
+def test_get_user_fallback_secret(self):
+    # Step 1: Create a test user
+    created_user = User.objects.create_user(
+        "testuser", "test@example.com", "testpw"
+    )
+    
+    # Step 2: Log the user in (creates session with current SECRET_KEY)
+    self.client.login(username="testuser", password="testpw")
+    
+    # Step 3: Get the request with the session
+    request = HttpRequest()
+    request.session = self.client.session
+    prev_session_key = request.session.session_key
+    
+    # Step 4: CRITICAL TEST - Rotate SECRET_KEY
+    # New SECRET_KEY = "newsecret"
+    # Old SECRET_KEY moved to SECRET_KEY_FALLBACKS
+    with override_settings(
+        SECRET_KEY="newsecret",
+        SECRET_KEY_FALLBACKS=[settings.SECRET_KEY],  # Old key as fallback
+    ):
+        # Step 5: Try to get user with rotated key
+        # EXPECTED: User should still be authenticated (using fallback key)
+        # ACTUAL (before fix): User gets logged out (fallback key not checked)
+        user = get_user(request)
+        
+        # Assertions:
+        self.assertIsInstance(user, User)  # Should be a User, not AnonymousUser
+        self.assertEqual(user.username, created_user.username)  # Should be same user
+        self.assertNotEqual(request.session.session_key, prev_session_key)  # Session key should be cycled
+    
+    # Step 6: Test that session was upgraded
+    # Remove the fallback secret - session hash should now use new secret
+    with override_settings(SECRET_KEY="newsecret"):
+        user = get_user(request)
+        
+        # Should still work because session hash was upgraded in step 5
+        self.assertIsInstance(user, User)
+        self.assertEqual(user.username, created_user.username)
+
+
+
+
+
