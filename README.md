@@ -15,6 +15,7 @@
     }
 
 Failed testcase code:
+
 def test_get_user_fallback_secret(self):
     # Step 1: Create a test user
     created_user = User.objects.create_user(
@@ -54,6 +55,7 @@ def test_get_user_fallback_secret(self):
         # Should still work because session hash was upgraded in step 5
         self.assertIsInstance(user, User)
         self.assertEqual(user.username, created_user.username)
+
 
 
 
