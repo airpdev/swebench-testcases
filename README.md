@@ -17,6 +17,7 @@
 Failed testcase code for django__django-16631:
 
 def test_get_user_fallback_secret(self):
+
     created_user = User.objects.create_user(
         "testuser", "test@example.com", "testpw"
     )
@@ -41,4 +42,5 @@ def test_get_user_fallback_secret(self):
         user = get_user(request)
         self.assertIsInstance(user, User)
         self.assertEqual(user.username, created_user.username)
+
 
